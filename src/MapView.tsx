@@ -73,6 +73,14 @@ if (Platform.OS === 'ios') {
 }
 import AnimatedRegion from './AnimatedRegion';
 
+const noneMapStyle: MapStyleElement[] = [
+  {
+    featureType: 'all',
+    elementType: 'all',
+    stylers: [{visibility: 'off'}],
+  },
+];
+
 export const MAP_TYPES: MapTypes = {
   STANDARD: 'standard',
   SATELLITE: 'satellite',
@@ -1156,8 +1164,10 @@ class MapView extends React.Component<MapViewProps, State> {
 
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const userInterfaceStyle = this.props.userInterfaceStyle || 'system';
-    const customMapStyleString = customMapStyle
-      ? JSON.stringify(this.props.customMapStyle)
+    const finalCustomMapStyle =
+      this.props.mapType === 'none' ? noneMapStyle : customMapStyle;
+    const customMapStyleString = finalCustomMapStyle
+      ? JSON.stringify(finalCustomMapStyle)
       : undefined;
 
     const props: MapFabricNativeProps = {
