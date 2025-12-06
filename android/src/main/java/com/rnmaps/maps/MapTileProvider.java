@@ -174,53 +174,17 @@ public class MapTileProvider implements TileProvider {
 			}
 		}
 
-		if (image == null && !this.offlineMode && this.tileCachePath != null) {
-			String fileName = getTileFilename(x, y, zoom);
-			Constraints constraints = new Constraints.Builder()
-				.setRequiredNetworkType(NetworkType.CONNECTED)
-				.build();
-			OneTimeWorkRequest tileRefreshWorkRequest = new OneTimeWorkRequest.Builder(MapTileWorker.class)
-				.setConstraints(constraints)
-				.addTag(fileName)
-				.setInputData(
-					new Data.Builder()
-						.putString("url", getTileUrl(x, y, zoom).toString())
-						.putString("filename", fileName)
-						.putInt("maxAge", -1)
-						.build()
-					)
-				.build();
-			WorkManager workManager = WorkManager.getInstance(this.context.getApplicationContext());
-			Operation fetchOperation = workManager
-				.enqueueUniqueWork(fileName, ExistingWorkPolicy.KEEP, tileRefreshWorkRequest);
-			Future<Operation.State.SUCCESS> operationFuture = fetchOperation.getResult();
-			try {
-				operationFuture.get(1L, TimeUnit.SECONDS);
-				Thread.sleep(500);
-				Future<List<WorkInfo>> fetchFuture = workManager.getWorkInfosByTag(fileName);
-				List<WorkInfo> workInfo = fetchFuture.get(1L, TimeUnit.SECONDS);
-				Log.d("urlTile: ", workInfo.get(0).toString());
-				if (this.tileCachePath != null) {
-					image = readTileImage(x, y, zoom);
-					if (image != null) {
-						Log.d("urlTile","tile cache fetch HIT for " + zoom +
-							"/" + x + "/" + y);
-					} else {
-							Log.d("urlTile","tile cache fetch MISS for " + zoom +
-								"/" + x + "/" + y);
-					}
-				}
-			} catch (Exception e) {
-			  e.printStackTrace();
-			}
-		} else if (image == null && !this.offlineMode) {
-			Log.d("urlTile", "Normal fetch");
+		if (image == null && !this.offlineMode) {
+			Log.d("urlTile", "tile cache miss, fetching from server for " + zoom +
+		"/" + x + "/" + y);
 			image = fetchTile(x, y, zoom);
-			if (image == null) {
-				Log.d("urlTile", "tile fetch TIMEOUT / FAIL for " + zoom +
-					"/" + x + "/" + y);
+			if (image != null && this.tileCachePath != null) {
+				Log.d("urlTile", "tile fetched from server, saving to cache for " + zoom +
+		"/" + x + "/" + y);
+				writeTileImage(image, x, y, zoom);
 			}
 		}
+
 
 		return image;
 	}
