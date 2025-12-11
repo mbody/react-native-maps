@@ -1130,6 +1130,9 @@ class MapView extends React.Component<MapViewProps, State> {
   };
 
   render() {
+    if (this.props.mapType === 'none') {
+      return null;
+    }
     // Define props specifically for MapFabricNativeProps
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const {
